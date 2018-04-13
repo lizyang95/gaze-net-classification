@@ -16,16 +16,17 @@ from scipy.misc import imsave
 import matplotlib.pyplot as plt
 # from skimage.transform import resize
 
+from model import GazeClassifier
 from util import *
 from logger import Logger
 import gazenetGenerator as gaze_gen
 
 def main():
     TRAIN = True
-    num_class = 6
+    num_classes = 6
     batch_size = 4
     gaze_gen_batch_size = 1
-    gaze_gen_time_steps = 6
+    gaze_gen_time_steps = 4
     epochs = 1
     cnn_feat_size = 256     # AlexNet
     gaze_size = 3
@@ -39,8 +40,11 @@ def main():
     log_path = '../log'
     logger = Logger(log_path, 'classification')
 
-    model = models.alexnet(pretrained=True).cuda()
-    # print(model)
+    arch = 'alexnet'
+    model = GazeClassifier(arch=arch)
+    model.cuda()
+    model.eval()
+
     criterion = nn.CrossEntropyLoss().cuda()
 
     optimizer = torch.optim.SGD(model.parameters(), learning_rate,
@@ -55,7 +59,7 @@ def main():
                                 batch_size=gaze_gen_batch_size, crop_with_gaze=True,time_steps=gaze_gen_time_steps,
                                 crop_with_gaze_size=img_size[0], class_mode='categorical')
 
-    para = {'bs': batch_size, 'img_size': img_size, 'num_class': num_class,
+    para = {'bs': batch_size, 'img_size': img_size, 'num_class': num_classes,
             'print_freq': print_freq}
 
     if TRAIN:
@@ -113,21 +117,22 @@ def train(train_data,model,criterion,optimizer,epoch,logger,para):
         img_seq = np.reshape(img_seq,(-1,3,) + img_size)
         img_seq_var = torch.autograd.Variable(torch.Tensor(img_seq).cuda(), requires_grad=True)
         target_seq_var = torch.autograd.Variable(torch.Tensor(target_seq).cuda()).long()
-
+        target_seq_var = target_seq_var.repeat(img_seq.shape[0],1)
         optimizer.zero_grad()
-        output = model(img_seq_var)
-        output = output.view(-1,num_class)
-        loss = criterion(output, target_seq_var)
+        # cnn_feat_var = model(img_seq_var)
+        # cnn_feat_var = cnn_feat_var.view((cnn_feat_var.size()[0],cnn_feat_var.size()[1] ,cnn_feat_var.size()[2]*cnn_feat_var.size()[3]))
+        # print(cnn_feat_var.size())
+        # loss = criterion(output, target_seq_var)
+        #
+        # loss.backward()
+        # optimizer.step()
+        # time_cnt = time.time() - end
+        # end = time.time()
+        # end = time.time()
 
-        loss.backward()
-        optimizer.step()
-        time_cnt = time.time() - end
-        end = time.time()
-        end = time.time()
-
-        if i % print_freq == 0:
-            output = F.softmax(output, dim=1)
-            acc_frame = metric_frame(output,target_seq_var)
+        # if i % print_freq == 0:
+        #     output = F.softmax(output, dim=1)
+        #     acc_frame = metric_frame(output,target_seq_var)
             # acc_frame = acc_frame / (1.0 * )
 
 

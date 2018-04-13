@@ -1089,23 +1089,21 @@ class DirectoryIterator(Iterator):
                 if (gazes[i,j,1] >= images.shape[3] or gazes[i,j,1] < 0 or gazes[i,j,2] >= images.shape[2] or gazes[i,j,2] < 0) and j != 0 :
                     gazes[i,j,1] = gazes[i,j-1,1]
                     gazes[i,j,2] = gazes[i,j-1,2]
-                x = gazes[i, j, 1]+img_size/2+1
-                y = gazes[i, j, 2]+img_size/2+1
+                x = gazes[i, j, 1]+img_size/2
+                y = gazes[i, j, 2]+img_size/2
 
-                right_bound = int(min(x+(img_size/2),images.shape[3]+img_size/2+1))
+                right_bound = int(min(x+(img_size/2),images.shape[3]+img_size/2))
                 left_bound = int(max(0,x-(img_size/2)))
                 up_bound = int(max(0,y-(img_size/2)))
-                down_bound = int(min(images.shape[2]+img_size/2+1,y+(img_size/2)))
-
+                down_bound = int(min(images.shape[2]+img_size/2,y+(img_size/2)))
                 img = images[i,j,:,:,:]
-                pad_width = int(img_size/2+1)
-                img = np.pad(img,((pad_width,pad_width),(pad_width,pad_width)),'warp')
+                pad_width = int(img_size/2)
+                img = np.pad(img,((pad_width,pad_width),(pad_width,pad_width),(0,0)),'wrap')
                 tmp= img[up_bound:down_bound, left_bound:right_bound, :]
                 if tmp.shape != (img_size, img_size):
                     img_seq[i, j, :, :, :] = sci.imresize(tmp, (img_size, img_size,3))
                 else:
                     img_seq[i, j, :, :, :] = tmp
-        # print("finished crop with gaze")
         return img_seq
 
     def _get_batches_of_transformed_samples(self, index_array):
