@@ -875,7 +875,7 @@ def load_interaction_sequence(interaction_path, white_list_formats, grayscale=Fa
     # print(len(img_sequence))
     gaze_sequence = modify_gaze_sequence_correct(gaze_sequence, ori_width=width, ori_height=height, crop=crop, target_size=target_size)
     gaze_sequence = gaze_sequence[start:start+time_steps*time_skip:time_skip, :]
-    if gaze_sequence.shape[0] < 32:
+    if gaze_sequence.shape[0] < time_steps:
         print(interaction_path)
         raise NameError(interaction_path)
     return np.array(img_sequence), gaze_sequence
@@ -1078,8 +1078,8 @@ class DirectoryIterator(Iterator):
         time_steps = self.time_steps
         img_size = self.crop_with_gaze_size
         num_channel = 3
-        print("get into _crop_with_gaze")
-        print((batch_size,time_steps,img_size,img_size,num_channel))
+        # print("get into _crop_with_gaze")
+        # print((batch_size,time_steps,img_size,img_size,num_channel))
         img_seq = np.zeros((batch_size,time_steps,img_size,img_size,num_channel), dtype=int)
         for i in range(batch_size):
             for j in range(time_steps):
