@@ -8,7 +8,7 @@ def normalize(imgs):
     std=[0.229, 0.224, 0.225]
     shape = imgs.shape
 
-    imgs /= 255.0
+    imgs = imgs/255.0
     imgs -= mean
     imgs /= std
 

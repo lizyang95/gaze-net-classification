@@ -40,7 +40,7 @@ def main():
     logger = Logger(log_path, 'classification')
 
     model = models.alexnet(pretrained=True).cuda()
-    print(model)
+    # print(model)
     criterion = nn.CrossEntropyLoss().cuda()
 
     optimizer = torch.optim.SGD(model.parameters(), learning_rate,
@@ -103,23 +103,32 @@ def train(train_data,model,criterion,optimizer,epoch,logger,para):
     print_freq = para['print_freq']
 
     model.train()
-    print("training interaction number")
+    end = time.time()
     train_num = len(train_data)
-    # print(train_num)
-    # end = time.time()
 
     for i in range(train_num):
-        data_time.update(time.time() - end)
+        # data_time.update(time.time()  - end)
         img_seq,target_seq = next(train_data)
-        print(img_seq.shape)
-        # img_seq = normalize(img_seq)
-        # print(img_seq.shape)
-        img_seq = np.reshape(img_seq,(img_seq.shape[0]*img_seq.shape[1],3,) + img_size)
+        img_seq = normalize(img_seq)
+        img_seq = np.reshape(img_seq,(-1,3,) + img_size)
         img_seq_var = torch.autograd.Variable(torch.Tensor(img_seq).cuda(), requires_grad=True)
         target_seq_var = torch.autograd.Variable(torch.Tensor(target_seq).cuda()).long()
+
         optimizer.zero_grad()
         output = model(img_seq_var)
+        output = output.view(-1,num_class)
         loss = criterion(output, target_seq_var)
+
+        loss.backward()
+        optimizer.step()
+        time_cnt = time.time() - end
+        end = time.time()
+        end = time.time()
+
+        if i % print_freq == 0:
+            output = F.softmax(output, dim=1)
+            acc_frame = metric_frame(output,target_seq_var)
+            # acc_frame = acc_frame / (1.0 * )
 
 
 #
