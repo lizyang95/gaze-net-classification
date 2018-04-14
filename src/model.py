@@ -13,64 +13,52 @@ from skimage.io import imsave
 from skimage.transform import resize
 
 
-class FeatureExtractorLayer(nn.Module):
+class GazeClassifier(nn.Module):
     '''
     call the CNN model as a feature extractor
     '''
-    def __init__(self, arch):
-        super(FeatureExtractorLayer, self).__init__()
+    def __init__(self, arch='alexnet',num_class=6):
+        super(GazeClassifier, self).__init__()
         self.arch = arch   # 'alexnet' or 'vgg16'
+        self.num_class=num_class
         self.features = self.load_pretrained_model()
+        self.classfier = self.load_pretrained_classifier()
+        self.classification = self.build_mlp_classifier()
 
-    def forward(self, img):
-        feat = self.features(img)
-        return feat
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), 256 * 6 * 6)
+        x = self.classfier(x)
+        x = self.classification(x)
+        return x
 
     def load_pretrained_model(self):
         print("Load model from torchvision.models")
         if self.arch == 'alexnet':
             pretrained_model = models.__dict__[self.arch](pretrained=True)
+            # model_urls = {
+            #         'alexnet': 'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth',
+            # }
+            # pretrained_model = model_zoo.load_url(model_urls['alexnet'].replace('https://', 'http://'))
             pretrained_model = pretrained_model.features    # only keep the conv layers
-            #TODO: change it back
             # pretrained_model = nn.Sequential(*list(pretrained_model.children())[:-1]) # remove the last maxpool
-            # print(pretrained_model)
         else:
             raise Exception("Please download the model to ~/.torch and change the params")
         return pretrained_model
 
-class GazeClassifier(nn.Module):
-    '''
-    the Model classifer
-    '''
-    def __init__(self,num_classes=6,cnn_feat_size=256,gaze_size=3,arch='alexnet'):
-        '''
-        num_classes: 6
-        cnn_feat_size: num of CNN features for each image
-        gaze_size: 3, (p,x,y)
-        '''
-        super(GazeClassifier, self).__init__()
-        self.num_classes=num_classes
-        self.arch = arch
-        self.cnn_feat_size = cnn_feat_size
-        self.gaze_size = gaze_size
-        self.feature_extractor = FeatureExtractorLayer(arch)
-        self.classifier = self.build_classifier()
+    def load_pretrained_classifier(self):
+        input_size=4096
+        if self.arch =='alexnet':
+            pretrained_model = models.__dict__[self.arch](pretrained=True)
+            pretrained_model = pretrained_model.classifier    # only keep the conv layers
+            pretrained_model = nn.Sequential(*list(pretrained_model.children())[:-1]) # remove the last layer
+        return pretrained_model
 
-    def build_classifier(self):
-        input_size = self.cnn_feat_size
+    def build_mlp_classifier(self):
+        input_size = 4096
         mlp = nn.Sequential(
-                nn.Linear(input_size, input_size),
-                nn.Linear(input_size, input_size),
                 nn.Linear(input_size, self.num_class))
         return mlp
-
-    def forward(self,cnn_feat_seq,restart=True):
-        '''
-        cnn_feat_seq: (gaze_gen_batch_size*gaze_gen_time_steps,36,256)
-        '''
-
-
-
 
 class SpatialAttentionLayer(nn.Module):
     '''

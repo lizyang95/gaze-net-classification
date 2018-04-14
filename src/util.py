@@ -49,6 +49,7 @@ def adjust_contrast(img):
     return img_new
 
 def metric_frame(output, target):
+    import torch
     correct = 0
     num_frame = target.size()[0]
     _, prediction = torch.max(output.data, 1)
